@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+#mapfile=FBV3twitch_twitter.txt
+
+if [ -z ${NOWLIVEMAPFILE} ]
+then
+    echo "Environment variables not set. Run nowliveenv.sh to set them"
+    exit
+fi
+
+mapfile=${NOWLIVEMAPFILE}
+
+if [ -f ${mapfile} ]
+then
+	num=$(grep -c ":" ${mapfile})
+	if [ $num -gt 0 ]
+	then
+		grep -v "#" ${mapfile} | cut -f1 -d":"
+	else
+		echo "there are no streamers at this time"
+	fi
+else
+	echo "${mapfile} not found"
+fi
+

@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+#FILE="FBV3twitch_twitter.txt"
+if [ -z ${NOWLIVEMAPFILE} ]
+then
+    echo "Environment variables not set. Run ' . nowliveenv.sh' to set them"
+    exit
+fi
+
+FILE=${NOWLIVEMAPFILE}
+
+# if [ -f ${FILE} ]
+# then
+# 	num=$(grep -c "|" ${FILE})
+# 	if [ $num -gt 0 ]
+# 	then
+# 		grep "|" ${FILE} | cut -f1 -d":"
+# 	else
+# 		echo "there are no nominees at this time"
+# 	fi
+# else
+# 	echo "${FILE} not found"
+# fi
+
+if [ -f ${FILE} ]
+then
+	num=$(grep -c ":" ${FILE})
+	if [ $num -gt 0 ]
+	then
+		for u in $(cat ${FILE})
+		do
+			streamer=$(echo $u | cut -f1 -d":")
+			type=$(echo $u | cut -f4 -d":")
+			if [ ${#type} -eq 0 ]
+			then
+				type="notfound"
+			fi
+			if [ ${type} = "N" ]
+			then
+				echo ${streamer}
+			fi
+			if [ ${type} = "O" ]
+			then
+				echo ${streamer} " - opted out"
+			fi
+		done
+	else
+		echo "there are no nominees at this time"
+	fi
+else
+	echo "${FILE} not found"
+fi

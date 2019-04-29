@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.tvs.savelog</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/tvs/discord/tkf/savelog.sh</string>
+    <string>c</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/tvs/discord/tkf</string>
+
+  <key>Nice</key>
+  <integer>1</integer>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+	<key>Hour</key>
+	<integer>0</integer>
+	<key>Minute</key>
+	<integer>10</integer>
+  </dict>
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/tvs/discord/tkf/logs/cron.err</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/tvs/discord/tkf/logs/cron.out</string>
+</dict>
+</plist>
