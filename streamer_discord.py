@@ -109,7 +109,7 @@ def countTweets(logfile):
 
 	return tweetcount
 
-def log(logfile,twitch,twitter,nominee,rerun,tkf,missed,multiple):
+def log(logfile,twitch,twitter,facebook,nominee,rerun,tkf,missed,multiple):
 
 	tweetcount=1
 
@@ -119,8 +119,10 @@ def log(logfile,twitch,twitter,nominee,rerun,tkf,missed,multiple):
 	else:
 		print (f'Creating logfile {logfile}\n')
 		lfile = open(logfile, 'w')
-		lfile.write('%s' % 
-			("date                            twitch                          twitter                 tkftype         live            tkfORnot\n\n"))
+		lfile.write('%20s\t%18s\t%18s\t%18s\t%s\t%s\t%s\n' %
+			("date".ljust(20),"twitch".ljust(18),"twitter".ljust(18),"facebook".ljust(18),"tkftype".ljust(8),"live".ljust(10),"tkfOrNot".ljust(6)))
+		#lfile.write('%s' % 
+		#	("date                          twitch                  twitter            facebook         tkftype         live            tkfORnot\n\n"))
 
 	if nominee:
 		nom="nominee"
@@ -143,9 +145,9 @@ def log(logfile,twitch,twitter,nominee,rerun,tkf,missed,multiple):
 
 	now = datetime.datetime.now()
 
-	lfile.write('%4d-%02d-%02d\t%02d:%02d:%02d\t%25s\t%17s\t%s\t%s\t%s\n' % 
-		(now.year,now.month,now.day,now.hour,now.minute,now.second,twitch.ljust(25),twitter.ljust(17),
-			nom.ljust(8),live.ljust(8),tkfstr.ljust(6)))
+	lfile.write('%4d-%02d-%02d %02d:%02d:%02d\t%18s\t%18s\t%18s\t%s\t%s\t%s\n' % 
+		(now.year,now.month,now.day,now.hour,now.minute,now.second,twitch.ljust(18),twitter.ljust(18),
+			facebook.ljust(18),nom.ljust(8),live.ljust(10),tkfstr.ljust(6)))
 #	lfile.write('\nnumber of tweets: %d\n' % (tweetcount))
 	lfile.close()
 
@@ -335,7 +337,7 @@ def main():
 		print (stream + "\n")
 
 	if not args['nolog']:
-		log(logfile,streamer,twitter,nominee,args['reRun'],args['notTKF'],args['missed'],args['multiples'])
+		log(logfile,streamer,twitter,facebook,nominee,args['reRun'],args['notTKF'],args['missed'],args['multiples'])
 
 	sys.exit()
 	
