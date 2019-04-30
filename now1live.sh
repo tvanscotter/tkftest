@@ -67,22 +67,20 @@ do
 	esac
 done
 
-echo "Last greeting used:"
+echo -n "Last greeting used:"
 cat logs/lastgreeting
+echo "Current list of greetings:"
+num=0
+while read line
+do
+	((num=num+1))
+	echo "${num}: ${line}"
+	greetinglist=${greetinglist}${num}" "
+done < greetfile
 
-greetings=("1" "2" "3" "4" "5" "6" "7" "8" "9")
+echo "select the number of the greeting you want to use for this now-live:"
 
-echo "Greetings are:"
-echo "1:Hey everyone"
-echo "2:Have you heard?"
-echo "3:This just in"
-echo "4:Hello folks"
-echo "5:Did you know?"
-echo "6:Greetings friends"
-echo "7:Here's a thing"
-echo "8:And now this"
-echo "9:(none)"
-
+greetings=(${greetinglist})
 select greeting in "${greetings[@]}"
 do
 	case greeting in
