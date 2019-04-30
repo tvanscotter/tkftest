@@ -4,6 +4,7 @@
 # Author: Tom Van Scotter
 # Date: 12/12/18
 # Update Date: 12/23/18
+# Update Date: 04/29/19
 #
 # Synopsis:
 # Generate text strings to be used for a discord message, a tweet, and a FaceBook post
@@ -38,9 +39,10 @@ import re
 
 def usage():
 	print ("Usage: ")
-	print ("\nUse this script to generate two sets of text:")
-	print ("\nthe first text string will be a single line and can be used as the text for a message in the TKF discord #now-live channel")
-	print ("\nthe second text string will be a multi-line string that can be used to send a tweet")
+	print ("\nUse this script to generate three sets of text:")
+	print ("\nthe first text string is a single line to be used as the text for a message in the TKF discord #now-live channel")
+	print ("\nthe second text string is a multi-line string to be used to send a tweet")
+	print ("\nthe third text string is a multi-line string to be used to post a message to facebook")
 	print ("Single tick-marks are required for the streamer text if it is more than one word")
 	print ("There may be special characters that don't work well in the streamer text")
 	print ("Haven't found any yet but it's early-on using this script")
@@ -51,35 +53,15 @@ def usage():
 	print ("\n",sys.argv[0]," -t rockitsage -w @rockitsage")
 	print ("\nPlease feel free to make any changes to this code you want. Let the author know if you do something really cool.")
 	print ("Run: ", sys.argv[0], " -h for syntax\n")
-	
 
-# this function checks to see if the value twitch is in the list user dict
-# and returns the value for twitch if so or False if not
-# the value of twitch in the usermap dict is the twitch streamer's twitter handle
-# and code have optional "!Y" on the end. This signifies that the streamer is
-# currently a nominee and will get a slightly different 
-# Find more like this at @TheKnowledgeFe1 vs Find this and more at @TheKnowledgeFe1
-
-def getTwitter(twitch,usermap):
-	if twitch in usermap:
-		return usermap[twitch]
-	else:
-		return False
-
-# read the entries from the file into a dict structure
-# the format of the file is:
-# twitch-handle:twitter-handle[|Y]
-# the optional [|Y] indicates that the streamer is on the nominations list and
-# will get a slightly different tweet than the streamers who are on the #list-of-streamers
-
-def getTwitterList(filename):
-	if os.path.isfile(filename):
-		with open(filename, 'r') as f:
-			d = dict(line.strip().split(':') for line in f)
-		f.close()
-		return d
-	else:
-		return False
+# this function reads the mapfile into a dictionary containing:
+# the streamer's twitch handle, twitter handle (if any), facebook handle (if any) and an option (if applicable)
+# the format of the mapfile is: twitch:twitter:facebook:option
+# the values of option are: N - nominee and O - opt-out
+# if the option is N, then this streamer has been nominatd for to be on the TKF streamer list
+# but has not yet been accepted by committee vote. nominated streamers will have twitter
+# and facebook posts created for them. The text of the messages will be slightly different
+# if the option is O, no messages will be generated for this streamer
 
 def getHandleMapping(filename):
 #	streamerlist = {'napfan': {'twitter': 'tvanscotter', 'option': '', 'facebook': 'vanscotter'}}
@@ -90,6 +72,21 @@ def getHandleMapping(filename):
 			for line in f:
 				twitch,twitter,facebook,option=line.strip().split(':')
 				d[twitch] = {'twitter': twitter, 'facebook': facebook, 'option': option}
+		f.close()
+		return d
+	else:
+		return False
+
+def getGreetings(filename):
+#	streamerlist = {'napfan': {'twitter': 'tvanscotter', 'option': '', 'facebook': 'vanscotter'}}
+#	return streamerlist
+	greetingnum=0
+	if os.path.isfile(filename):
+		d={}
+		with open(filename, 'r') as f:
+			for line in f:
+				greetingnum+=1
+				d[greetingnum] = line.strip('\n')
 		f.close()
 		return d
 	else:
@@ -111,8 +108,6 @@ def countTweets(logfile):
 
 def log(logfile,twitch,twitter,facebook,nominee,rerun,tkf,missed,multiple):
 
-	tweetcount=1
-
 	if os.path.isfile(logfile):
 		lfile = open(logfile, 'a')
 		tweetcount = countTweets(logfile) + 1
@@ -123,11 +118,6 @@ def log(logfile,twitch,twitter,facebook,nominee,rerun,tkf,missed,multiple):
 			("date".ljust(20),"twitch".ljust(18),"twitter".ljust(18),"facebook".ljust(18),"tkftype".ljust(8),"live".ljust(10),"tkfOrNot".ljust(6)))
 		#lfile.write('%s' % 
 		#	("date                          twitch                  twitter            facebook         tkftype         live            tkfORnot\n\n"))
-
-	if nominee:
-		nom="nominee"
-	else:
-		nom="streamer"
 
 	if rerun:
 		live="rerun"
@@ -147,7 +137,7 @@ def log(logfile,twitch,twitter,facebook,nominee,rerun,tkf,missed,multiple):
 
 	lfile.write('%4d-%02d-%02d %02d:%02d:%02d\t%18s\t%18s\t%18s\t%s\t%s\t%s\n' % 
 		(now.year,now.month,now.day,now.hour,now.minute,now.second,twitch.ljust(18),twitter.ljust(18),
-			facebook.ljust(18),nom.ljust(8),live.ljust(10),tkfstr.ljust(6)))
+			facebook.ljust(18),nominee.ljust(8),live.ljust(10),tkfstr.ljust(6)))
 #	lfile.write('\nnumber of tweets: %d\n' % (tweetcount))
 	lfile.close()
 
@@ -156,8 +146,7 @@ def main():
 #	sys.exit()
 
 	msgidx = 1
-	nominee = False
-	optout = False
+	nominee = "streamer"
 	option = ""
 
 	parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
@@ -182,17 +171,7 @@ def main():
 
 	args = vars(parser.parse_args())
 
-	greetings = {
-		1: "Hey everyone, ",
-		2: "Have you heard? ",
-		3: "This just in, ",
-		4: "Hello folks, ",
-		5: "Did you know? ",
-		6: "Greetings friends, ",
-		7: "Here's a thing, ",
-		8: "And now this: ",
-		9: "",
-	}
+	greetings = getGreetings('greetfile')
 
 	if args['message2']:
 		msgidx = 2
@@ -214,16 +193,9 @@ def main():
 
 	if args['greeting']:
 		greeting =  greetings.get(int(args['greeting']), "Hola everyone, ")
-
-	# if the log file last changed status is yesterday
-	# give the user a chance to run the savelog.sh
-
-	curday = datetime.datetime.now().strftime("%Y%m%d")
 	
 	if args['verbose']:
 		print ("mapfile: ",mapfile,"\nlogfile: ",logfile)
-
-	# mylist = getTwitterList('twitch_twitter.txt')
 	
 	if args['usage'] or not args['twitchhandle']:
 		usage()
@@ -231,7 +203,11 @@ def main():
 	
 	# if twitter handle was not included in the arguments
 	# then get it from the mapfile
-	# then split that value to see if the streamer is a nominee or on the streamer list
+	# i decided not to add a command argument for facebook handle
+	# so we will always get the facebook handle from the mapfile
+	# also get the option from the mapfile
+
+	# not sure we need to prepend with '@' if twitter not provided and not present in mapfile
 
 	mapInfo = getHandleMapping(mapfile)
 
@@ -239,34 +215,39 @@ def main():
 
 	if not args['twitterhandle']:
 		twitter = mapInfo[streamer]['twitter']
-		option = mapInfo[streamer]['option']
-	#	twitternom = getTwitter(args['twitchhandle'].lower(),mylist)
-		if args['verbose']:
-			print ("twitter, nom ", twitter, " ", option)
 		if not twitter:
 			twitter = '@' + args['twitchhandle']
 	else:
 		twitter = args['twitterhandle']
 
+	option = mapInfo[streamer]['option']
+	facebook = mapInfo[streamer]['facebook']
+
 	if option == "N":
-		nominee = True
+		nominee = "nominee"
 	elif option == "O":
-		optout = True
 		print ("\nStreamer: ", args['twitchhandle'], " has opted out of personal tweets. RT from TKF twitter if streamer does their own tweet\n")
 		sys.exit()
 
-	if nominee:
+	# set up the string for the last part of the tweet / FB post
+
+	if nominee == "nominee":
 		htags="#NerdHype #TwitchEDU\nFind more like this at @TheKnowledgeFe1"
 		htagsFB="#NerdHype #TwitchEDU\nFind more like this at https://twitter.com/TheKnowledgeFe1"
 	else:
 		htags="#NerdHype #TwitchEDU\nFind this and more at @TheKnowledgeFe1"
 		htagsFB="#NerdHype #TwitchEDU\nFind this and more at https://twitter.com/TheKnowledgeFe1"
 
+	# print something if no stream text / stream title provided
+
 	if not args['streamtext']:
-		args['streamtext'] = 'NOTEXT'
+		streamertext = 'enjoy the stream!'
+	else:
+		streamertext = args['streamtext']
 	
-	streamertext = args['streamtext']
-	
+	# this makes a slight change to the first line of the tweet / FB post
+	# just for a little variety so we aren't completelt bot-ish
+
 	if args['changeCheckItOut']:
 		moretext = ' ! ' + args['changeCheckItOut']
 		if args['verbose']:
@@ -278,49 +259,57 @@ def main():
 		else:
 			moretext = ' ! Time to learn things!'
 
-	stream = "\n" + streamer + " is now live on https://www.twitch.tv/" + streamer + " ! Go check it out!\n"
+	# if the streamer said it was a re-run change include that in the tweet / FB post
+
+	livererun=""
+	if args["reRun"]:
+		livererun = " is showing a re-run on https://www.twitch.tv"
+	else:
+		livererun = " is live on https://www.twitch.tv/"
 	
+	stream = "\n" + streamer + livererun + streamer + " ! Go check it out!\n"
+
 	if args['dontShowCopyPasta']:
 		print ("\nDISCORD: copy/pasta this for TKF discord #now-live channel")
 	
 	# print the discord link
 
-	print (args['missed'], " ", args['multiples'])
 	if not args['missed'] and not args['multiples']:
 		print (stream)
 	
-	if args['reRun']:
-		stream = greeting + twitter + " is showing a re-run on https://www.twitch.tv/" + streamer + moretext + "\n"
-	else:
-		stream = greeting + twitter + " is live on https://www.twitch.tv/" + streamer + moretext + "\n"
+	stream = greeting + twitter + livererun + streamer + moretext + "\n"
 
 	stream+= streamertext.strip('\n') + "\n"
 
+	# originally, I was using this to generate tweets for non-TKF streamers
+	# haven't been doing that lately but the code still is still here
+	# it does not include any TKF tags / links
+	
 	if not args['notTKF']:
 		stream+= htags + "\n"
 	if args['dontShowCopyPasta']:
 		print ("TWITTER: copy/pasta this for tweet\n")
 
-	# print the tweet
+	# print the tweet. if the size is more than the limit, remove something after pasting into twitter
+	# if the tweet opertion is ever automated this code will have to do the size reduction somehow
 
 	if not args['missed'] and not args['multiples']:
 		print (stream)
-
-	print ("Tweet is " + str(len(stream)) + " characters. 280 max.\n")
+		print ("Tweet is " + str(len(stream)) + " characters. 280 max.\n")
 
 	# generate the facebook post text
 
-	# print (mapInfo)
+	# twitchURL = "https://www.twitch.tv/" + streamer
 
-	twitchURL = "https://www.twitch.tv/" + streamer
+	stream = greeting
 
-	facebook = mapInfo[streamer]['facebook']
 	if not facebook:
-		facebook = streamer
-	#if len(facebook) > 2 and '@' in facebook:
-	#	facebook=facebook[0:-2]
-
-	stream = greeting + facebook + " is live on " + twitchURL + moretext + "\n"
+		stream+= streamer
+	else:
+		stream+= facebook
+	
+	stream+= livererun + streamer + moretext + "\n"
+	
 	stream+= '"' + streamertext.strip('\n') + '"' + "\n"
 	
 	if '@' in mapInfo[streamer]['twitter']:
@@ -337,42 +326,10 @@ def main():
 		print (stream + "\n")
 
 	if not args['nolog']:
+		if '@' not in twitter:
+			twitter=""
 		log(logfile,streamer,twitter,facebook,nominee,args['reRun'],args['notTKF'],args['missed'],args['multiples'])
 
 	sys.exit()
 	
 main()
-
-'''
-if len(sys.argv) > 1:
-
-	streamer=sys.argv[1]
-	 
-	if len(sys.argv) > 2:
-		twitch=sys.argv[2]
-	else:
-		twitch=streamer
-	
-	stream = "\n" + streamer + " is now live on https://www.twitch.tv/" + streamer + " ! Go check it out!\n"
-	
-	print ("\ncopy/pasta this for TKF discord #now-live channel")
-	print (stream)
-	
-	if len(sys.argv) > 3:
-		streamertext=sys.argv[3]
-		stream2 = twitch + " is now live on https://www.twitch.tv/" + streamer + " ! Go check it out!\n"
-		stream2+= streamertext + "\n" + htags + "\n"
-		print ("copy/pasta this for tweet\n")
-		print (stream2)
-	
-else:
-	print ("Usage: ", sys.argv[0], " streamer-handle [twitch handle] ['streamer text']")
-	print ("\nUse this script to generate two sets of text:")
-	print ("\nthe first text string will be a single line and can be used as the text for a message in the TKF discord #now-live channel")
-	print ("\nthe second text string will be a multi-line string that can be used to send a tweet")
-	print ("Single tick-marks are required for the streamer text if it is more than one word")
-	print ("There may be special characters that don't work well in the streamer text")
-	print ("Haven't found any yet but it's early on using this script")
-	print ("\ntry this as an example:\n",sys.argv[0]," rockitsage @rockitsage 'Shiny rocks and stuff'")
-	print ("\nPlease feel free to make any changes to this code you want. Let the author know if you do something really cool.")
-'''
