@@ -121,6 +121,16 @@ def log(logfile,twitch,twitter,facebook,nominee,rerun,tkf,missed,multiple):
 		#lfile.write('%s' % 
 		#	("date                          twitch                  twitter            facebook         tkftype         live            tkfORnot\n\n"))
 
+	# there are 4 types for the stream as far as the log is concerned
+	# a stream can be:
+	# live - the normal situation, streamer goes live
+	# rerun - streamer starts stream with a VOD
+	# multiple - streamer issues subsequent now-live with-in an hour or so
+	#            general assumption is that something went wrong and they
+	#            re-started stream. no need to tweet/post again
+	# missed - the streamer started a live stream and finished the live stream
+	#          while I was AFK and did not get a chance to tweet/post
+
 	if rerun:
 		live="rerun"
 	elif missed:
@@ -129,6 +139,10 @@ def log(logfile,twitch,twitter,facebook,nominee,rerun,tkf,missed,multiple):
 		live="multiple"
 	else:
 		live="live"
+
+	# Initially I was using this code to generate tweets for non-TKF streamers
+	# those didn't contain any of the TKF tags/links
+	# haven't been doing this for a while. may be time to pull this out of the code and log
 
 	if tkf:
 		tkfstr="notTKF"
@@ -147,9 +161,12 @@ def main():
 	
 #	sys.exit()
 
-	msgidx = 1
-	nominee = "streamer"
+	msgidx = 1 # this determines if part of the message is 'Go check it out!' or 'Time to learn things!'
+	nominee = "streamer" # the value will be changed to 'nominee' if the option value for the streamer
+						 # the mapfile is N
 	option = ""
+
+	# I kind of got carried away with the command line args
 
 	parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
 
@@ -175,45 +192,57 @@ def main():
 
 	greetings = getGreetings('greetfile')
 
+	# Use 'Time to learn things!' if arg -2 is present
+
 	if args['message2']:
 		msgidx = 2
 
-	#mapfile = "/Users/tvs/discord/src/twitch_twitter.txt"
-	#logfile = "/Users/tvs/discord/src/twitch_twitter.log"
+	# if mapfile is provided on the command line then use it
+	# otherwise use the default name
 
 	if args['mapfile']:
 		mapfile = args['mapfile']
 	else:
 		mapfile = "twitch_twitter.txt"
 
+	# if logfile is provided on the command line then use it
+	# otherwise use the defualt name
+
 	if args['logfile']:
 		logfile = args['logfile']
 	else:
 		logfile = "twitch_twitter.log"
 
+	# set the default greeting for the tweet/post
+
 	greeting="Hey everyone, "
+
+	# if the greeting number was provided on the command line
+	# then use that number to find the value in the greetings dictionary
 
 	if args['greeting']:
 		greeting =  greetings.get(int(args['greeting']), "Hola everyone, ")
 	
+	# verbose was mainly for testing. should either add a bunch of stuff
+	# to display or remove the option altogether
+
 	if args['verbose']:
 		print ("mapfile: ",mapfile,"\nlogfile: ",logfile)
 	
+	# print the usage message if --usage on command line or no twitch handle provided
+
 	if args['usage'] or not args['twitchhandle']:
 		usage()
 		sys.exit()
 	
+	streamer = args['twitchhandle']
+	mapInfo = getHandleMapping(mapfile)
+
 	# if twitter handle was not included in the arguments
 	# then get it from the mapfile
 	# i decided not to add a command argument for facebook handle
 	# so we will always get the facebook handle from the mapfile
 	# also get the option from the mapfile
-
-	# not sure we need to prepend with '@' if twitter not provided and not present in mapfile
-
-	mapInfo = getHandleMapping(mapfile)
-
-	streamer = args['twitchhandle']
 
 	if not args['twitterhandle']:
 		twitter = mapInfo[streamer]['twitter']
