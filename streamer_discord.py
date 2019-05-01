@@ -115,7 +115,9 @@ def log(logfile,twitch,twitter,facebook,nominee,rerun,tkf,missed,multiple):
 		print (f'Creating logfile {logfile}\n')
 		lfile = open(logfile, 'w')
 		lfile.write('%20s\t%18s\t%18s\t%18s\t%s\t%s\t%s\n' %
-			("date".ljust(20),"twitch".ljust(18),"twitter".ljust(18),"facebook".ljust(18),"tkftype".ljust(8),"live".ljust(10),"tkfOrNot".ljust(6)))
+			("date".ljust(20),"twitch".ljust(18),"twitter".ljust(18),"facebook".ljust(18),"tkftype".ljust(8),"live".ljust(10),"tkfOrNot".ljust(6))) 
+		lfile.write('%20s\t%18s\t%18s\t%18s\t%s\t%s\t%s\n' %
+			("----".ljust(20),"------".ljust(18),"-------".ljust(18),"--------".ljust(18),"-------".ljust(8),"----".ljust(10),"--------".ljust(6)))
 		#lfile.write('%s' % 
 		#	("date                          twitch                  twitter            facebook         tkftype         live            tkfORnot\n\n"))
 
