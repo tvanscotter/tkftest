@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+if [ $# -gt 0 ]
+then
+	logfile=${1}
+else
+	if [ -z ${NOWLIVELOGFILE} ]
+	then
+		echo "No logfile provided and Environment variables not set. Run ' . nowliveenv.sh' to set them"
+		exit
+	else
+		logfile=${NOWLIVELOGFILE}
+	fi
+	#logfile="logs/twitch_twitter.log"
+fi
+
+if [ -f ${logfile} ]
+then
+	grep 2019 ${logfile}
+else
+	echo "${logfile} not found"
+fi
+

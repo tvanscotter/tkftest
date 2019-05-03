@@ -64,8 +64,6 @@ def usage():
 # if the option is O, no messages will be generated for this streamer
 
 def getHandleMapping(filename):
-#	streamerlist = {'napfan': {'twitter': 'tvanscotter', 'option': '', 'facebook': 'vanscotter'}}
-#	return streamerlist
 	if os.path.isfile(filename):
 		d={}
 		with open(filename, 'r') as f:
@@ -78,8 +76,6 @@ def getHandleMapping(filename):
 		return False
 
 def getGreetings(filename):
-#	streamerlist = {'napfan': {'twitter': 'tvanscotter', 'option': '', 'facebook': 'vanscotter'}}
-#	return streamerlist
 	greetingnum=0
 	if os.path.isfile(filename):
 		d={}
