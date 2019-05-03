@@ -106,11 +106,10 @@ def countTweets(logfile):
 
 	return tweetcount
 
-def log(logfile,twitch,twitter,facebook,nominee,rerun,tkf,missed,multiple):
+def log(logfile,twitch,twitter,facebook,nominee,rerun,nottkf,misseddupe):
 
 	if os.path.isfile(logfile):
 		lfile = open(logfile, 'a')
-		tweetcount = countTweets(logfile) + 1
 	else:
 		print (f'Creating logfile {logfile}\n')
 		lfile = open(logfile, 'w')
@@ -133,10 +132,8 @@ def log(logfile,twitch,twitter,facebook,nominee,rerun,tkf,missed,multiple):
 
 	if rerun:
 		live="rerun"
-	elif missed:
-		live="missed"
-	elif multiple:
-		live="multiple"
+	elif misseddupe:
+		live=misseddupe
 	else:
 		live="live"
 
@@ -144,34 +141,193 @@ def log(logfile,twitch,twitter,facebook,nominee,rerun,tkf,missed,multiple):
 	# those didn't contain any of the TKF tags/links
 	# haven't been doing this for a while. may be time to pull this out of the code and log
 
-	if tkf:
+	if nottkf:
 		tkfstr="notTKF"
 	else:
 		tkfstr="TKF"
 
 	now = datetime.datetime.now()
 
+	if nominee == "N":
+		nominee = "nominee"
+	else:
+		nominee = "streamer"
+	
+	if '@' not in twitter:
+		twitterstr=""
+	else:
+		twitterstr=twitter
+	
 	lfile.write('%4d-%02d-%02d %02d:%02d:%02d\t%18s\t%18s\t%18s\t%s\t%s\t%s\n' % 
-		(now.year,now.month,now.day,now.hour,now.minute,now.second,twitch.ljust(18),twitter.ljust(18),
+		(now.year,now.month,now.day,now.hour,now.minute,now.second,twitch.ljust(18),twitterstr.ljust(18),
 			facebook.ljust(18),nominee.ljust(8),live.ljust(10),tkfstr.ljust(6)))
 #	lfile.write('\nnumber of tweets: %d\n' % (tweetcount))
 	lfile.close()
 
-def main():
-	
-#	sys.exit()
+class discordMsg():
+	"""docstring for discordMsg"""
+	def __init__(self, streamer, rerun, showheaders):
+		super(discordMsg, self).__init__()
+		self.streamer = streamer
+		self.rerun = rerun
+		self.showheaders = showheaders
+	def text(self):
+		text=""
+		live = " is now live on "
+		notlive = " is now showing a rerun on "
+		if self.rerun:
+			status = notlive
+		else:
+			status = live
+		if self.showheaders:
+			text = "DISCORD: copy/pasta this for discord post\n"
+		
+		text += "\n" + self.streamer + status + "https://www.twitch.tv/" + self.streamer + " ! Go check it out!\n"
+		return text
+		
+class getCommon():
+	"""docstring for getCommon"""
+	def __init__(self,args):
+		super(getCommon, self).__init__()
+		self.args = args
+		if self.args['mapfile']:
+			filename = self.args['mapfile']
+		else:
+			filename = 'twitch_twitter.txt'
+		self.mapInfo = getHandleMapping(filename)
+		self.streamer = self.args['twitchhandle']
+	def greeting(self):
+		if self.args['greeting']:
+			greetings = getGreetings('greetfile')
+			return greetings.get(int(self.args['greeting']), "Yo nerds, ")
+		else:
+			return("Hey everyone, ")
+	def endline1(self):
+		if self.args['message2']:
+			return("Time to learn things!")
+		else:
+			return("Go check it out!")
+	def logfile(self):
+		if self.args['logfile']:
+			return(self.args['logfile'])
+		else:
+			return("twitch_twitter.log")
+	def twitchhandle(self):
+		return(self.args['twitchhandle'])
+	def twitter(self):
+		return(self.mapInfo[self.streamer]['twitter'])
+	def facebook(self):
+		return(self.mapInfo[self.streamer]['facebook'])
+	def option(self):
+		return(self.mapInfo[self.streamer]['option'])
+	def verbose(self):
+		return(self.args['verbose'])
+	def rerun(self):
+		return(self.args['reRun'])
+	def twitterlastlines(self):
+		if self.mapInfo[self.streamer]['option'] == "N":
+			return("#NerdHype #TwitchEDU\nFind more like this at @TheKnowledgeFe1")
+		else:
+			return("#NerdHype #TwitchEDU\nFind this and more at @TheKnowledgeFe1")
+	def facebooklastlines(self):
+		if self.mapInfo[self.streamer]['option'] == "N":
+			return("#NerdHype #TwitchEDU\nFind more like this at https://twitter.com/TheKnowledgeFe1")
+		else:
+			return("#NerdHype #TwitchEDU\nFind this and more at https://twitter.com/TheKnowledgeFe1")
+	def livererun(self):
+		if self.args['reRun']:
+			return(" is showing a rerun on ")
+		else:
+			return(" is live on ")
+	def misseddupe(self):
+		if self.args['missed']:
+			return("missed")
+		elif self.args['multiples']:
+			return('duplicate')
+		else:
+			return(False)
+	def streamertext(self):
+		return(self.args['streamtext'])
+	def showheaders(self):
+		if self.args['dontShowCopyPasta']:
+			return(False)
+		else:
+			return(True)
+	def nolog(self):
+		if self.args['nolog']:
+			return(True)
+		else:
+			return(False)
+	def notTKF(self):
+		return(self.args['notTKF'])
 
-	msgidx = 1 # this determines if part of the message is 'Go check it out!' or 'Time to learn things!'
-	nominee = "streamer" # the value will be changed to 'nominee' if the option value for the streamer
-						 # the mapfile is N
-	option = ""
+class twitterMsg():
+	"""docstring for twitterMsg"""
+	def __init__(self, greeting, streamer, livererun, endline1, streamertext, lastlines, twitter, showheaders):
+		super(twitterMsg, self).__init__()
+		self.greeting = greeting
+		self.streamer = streamer
+		self.livererun = livererun
+		self.endline1 = endline1
+		self.streamertext = streamertext
+		self.lastlines = lastlines
+		self.twitter = twitter
+		self.showheaders = showheaders
+	def text(self):
+		text=""
+		twitchurl = "https://www.twitch.tv/"
+		if self.twitter:
+			handle = self.twitter
+		else:
+			handle = self.streamer
+		if self.showheaders:
+			text = "TWITTER: copy/pasta this for tweet\n\n"
+		
+		text += self.greeting + handle + self.livererun + twitchurl + self.streamer + " ! " + self.endline1 + "\n"
+		text += self.streamertext + "\n"
+		text += self.lastlines + "\n"
+		return(text)
+
+class facebookMsg():
+	"""docstring for twitterMsg"""
+	def __init__(self, greeting, streamer, livererun, endline1, streamertext, lastlines, twitter, facebook, showheaders):
+		super(facebookMsg, self).__init__()
+		self.greeting = greeting
+		self.streamer = streamer
+		self.livererun = livererun
+		self.endline1 = endline1
+		self.streamertext = streamertext
+		self.lastlines = lastlines
+		self.twitter = twitter
+		self.facebook = facebook
+		self.showheaders = showheaders
+	def text(self):
+		text=""
+		twitchurl = "https://www.twitch.tv/"
+		twitterurl = "https://twitter.com/"
+		if self.facebook:
+			handle = self.facebook
+		else:
+			handle = self.streamer
+		if self.showheaders:
+			text = "FACEBOOK: copy/pasta this for FB post\n\n"
+		
+		text += self.greeting + handle + self.livererun + twitchurl + self.streamer + " ! " + self.endline1 + "\n"
+		text += self.streamertext 
+		if '@' in self.twitter:
+			text += "\nTwitter: " + twitterurl + self.twitter[2:]
+		text += "\n"
+		text += self.lastlines + "\n"
+		return(text)
+
+def main():
 
 	# I kind of got carried away with the command line args
 
 	parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
 
 	parser.add_argument('-c','--changeCheckItOut', help='change the Check it out message to this string', required=False)
-	parser.add_argument('-d','--dontShowCopyPasta', help='dont show the copy/pasta messages', action='store_false', required=False)
+	parser.add_argument('-d','--dontShowCopyPasta', help='dont show the copy/pasta messages', action='store_true', required=False)
 	parser.add_argument('-f','--mapfile', help='the full path of the mapfile', required=False)
 	parser.add_argument('-g','--greeting', help='choose the greeting : Hey everyone, This just in, etc', required=False)
 	parser.add_argument('-k','--nolog', help='dont add a log entry', action='store_true', required=False)
@@ -190,177 +346,53 @@ def main():
 
 	args = vars(parser.parse_args())
 
-	greetings = getGreetings('greetfile')
-
-	# Use 'Time to learn things!' if arg -2 is present
-
-	if args['message2']:
-		msgidx = 2
-
-	# if mapfile is provided on the command line then use it
-	# otherwise use the default name
-
-	if args['mapfile']:
-		mapfile = args['mapfile']
-	else:
-		mapfile = "twitch_twitter.txt"
-
-	# if logfile is provided on the command line then use it
-	# otherwise use the defualt name
-
-	if args['logfile']:
-		logfile = args['logfile']
-	else:
-		logfile = "twitch_twitter.log"
-
-	# set the default greeting for the tweet/post
-
-	greeting="Hey everyone, "
-
-	# if the greeting number was provided on the command line
-	# then use that number to find the value in the greetings dictionary
-
-	if args['greeting']:
-		greeting =  greetings.get(int(args['greeting']), "Hola everyone, ")
-	
-	# verbose was mainly for testing. should either add a bunch of stuff
-	# to display or remove the option altogether
-
-	if args['verbose']:
-		print ("mapfile: ",mapfile,"\nlogfile: ",logfile)
-	
-	# print the usage message if --usage on command line or no twitch handle provided
+		# print the usage message if --usage on command line or no twitch handle provided
 
 	if args['usage'] or not args['twitchhandle']:
 		usage()
 		sys.exit()
-	
-	streamer = args['twitchhandle']
-	mapInfo = getHandleMapping(mapfile)
 
-	# if twitter handle was not included in the arguments
-	# then get it from the mapfile
-	# i decided not to add a command argument for facebook handle
-	# so we will always get the facebook handle from the mapfile
-	# also get the option from the mapfile
+	common = getCommon(args)
 
-	if not args['twitterhandle']:
-		twitter = mapInfo[streamer]['twitter']
-		if not twitter:
-			twitter = '@' + args['twitchhandle']
-	else:
-		twitter = args['twitterhandle']
+	if common.verbose():
 
-	option = mapInfo[streamer]['option']
-	facebook = mapInfo[streamer]['facebook']
+		print ("greeting:", common.greeting())
+		print ("endline1:", common.endline1())
+		print ("logfile:", common.logfile())
+		print ("twitchhandle:", common.twitchhandle())
+		print ("twitter:", common.twitter())
+		print ("facebook:", common.facebook())
+		print ("option:", common.option())
+		print ("twitterlastlines:", common.twitterlastlines())
+		print ("facebooklastlines:", common.facebooklastlines())
+		print ("livererun:", common.livererun())
+		print ("streamertext:", common.streamertext())
+		print ("showheaders:", common.showheaders())
 
-	if option == "N":
-		nominee = "nominee"
-	elif option == "O":
-		print ("\nStreamer: ", args['twitchhandle'], " has opted out of personal tweets. RT from TKF twitter if streamer does their own tweet\n")
+	if common.option() == 'O':
+		print ("\nStreamer:", common.twitchhandle(), "has opted out of tweets, FB posts from TKF.\n")
 		sys.exit()
 
-	# set up the string for the last part of the tweet / FB post
+	if not common.misseddupe():
+		discord = discordMsg(common.twitchhandle(),common.rerun(),common.showheaders())
+		print (discord.text())
 
-	if nominee == "nominee":
-		htags="#NerdHype #TwitchEDU\nFind more like this at @TheKnowledgeFe1"
-		htagsFB="#NerdHype #TwitchEDU\nFind more like this at https://twitter.com/TheKnowledgeFe1"
+		twitter = twitterMsg(common.greeting(),common.twitchhandle(),common.livererun(),common.endline1(),common.streamertext(),
+		common.twitterlastlines(),common.twitter(),common.showheaders())
+		print (twitter.text())
+	
+		facebook = facebookMsg(common.greeting(),common.twitchhandle(),common.livererun(),common.endline1(),common.streamertext(),
+		common.facebooklastlines(),common.twitter(),common.facebook(),common.showheaders())
+		print (facebook.text())
+
+	if common.nolog():
+		print("Log will not be added for", common.twitchhandle())
+	elif common.misseddupe():
+		print(common.misseddupe(), "now-live logged for", common.twitchhandle())
 	else:
-		htags="#NerdHype #TwitchEDU\nFind this and more at @TheKnowledgeFe1"
-		htagsFB="#NerdHype #TwitchEDU\nFind this and more at https://twitter.com/TheKnowledgeFe1"
-
-	# print something if no stream text / stream title provided
-
-	if not args['streamtext']:
-		streamertext = 'enjoy the stream!'
-	else:
-		streamertext = args['streamtext']
-	
-	# this makes a slight change to the first line of the tweet / FB post
-	# just for a little variety so we aren't completelt bot-ish
-
-	if args['changeCheckItOut']:
-		moretext = ' ! ' + args['changeCheckItOut']
-		if args['verbose']:
-			print (args['changeCheckItOut'])
-			print (moretext)
-	else:
-		if msgidx == 1:
-			moretext = ' ! Go check it out!'
-		else:
-			moretext = ' ! Time to learn things!'
-
-	# if the streamer said it was a re-run change include that in the tweet / FB post
-
-	livererun=""
-	if args["reRun"]:
-		livererun = " is showing a re-run on https://www.twitch.tv"
-	else:
-		livererun = " is live on https://www.twitch.tv/"
-	
-	stream = "\n" + streamer + livererun + streamer + " ! Go check it out!\n"
-
-	if args['dontShowCopyPasta']:
-		print ("\nDISCORD: copy/pasta this for TKF discord #now-live channel")
-	
-	# print the discord link
-
-	if not args['missed'] and not args['multiples']:
-		print (stream)
-	
-	stream = greeting + twitter + livererun + streamer + moretext + "\n"
-
-	stream+= streamertext.strip('\n') + "\n"
-
-	# originally, I was using this to generate tweets for non-TKF streamers
-	# haven't been doing that lately but the code still is still here
-	# it does not include any TKF tags / links
-	
-	if not args['notTKF']:
-		stream+= htags + "\n"
-	if args['dontShowCopyPasta']:
-		print ("TWITTER: copy/pasta this for tweet\n")
-
-	# print the tweet. if the size is more than the limit, remove something after pasting into twitter
-	# if the tweet opertion is ever automated this code will have to do the size reduction somehow
-
-	if not args['missed'] and not args['multiples']:
-		print (stream)
-		print ("Tweet is " + str(len(stream)) + " characters. 280 max.\n")
-
-	# generate the facebook post text
-
-	# twitchURL = "https://www.twitch.tv/" + streamer
-
-	stream = greeting
-
-	if not facebook:
-		stream+= streamer
-	else:
-		stream+= facebook
-	
-	stream+= livererun + streamer + moretext + "\n"
-	
-	stream+= '"' + streamertext.strip('\n') + '"' + "\n"
-	
-	if '@' in mapInfo[streamer]['twitter']:
-		stream+= "Twitter: https://twitter.com/" + twitter[1:] +"\n"
-
-	stream+= htagsFB + "\n"
-	
-	# print the facebook post
-
-	if args['dontShowCopyPasta']:
-		print ("FACEBOOK: copy/pasta this for facebook\n")
-	
-	if not args['missed'] and not args['multiples']:
-		print (stream + "\n")
-
-	if not args['nolog']:
-		if '@' not in twitter:
-			twitter=""
-		log(logfile,streamer,twitter,facebook,nominee,args['reRun'],args['notTKF'],args['missed'],args['multiples'])
-
+		print("Now-live logged for", common.twitchhandle())
+	log(common.logfile(),common.twitchhandle(),common.twitter(),common.facebook(),common.option(),
+	common.rerun(),False,common.misseddupe())
 	sys.exit()
 	
 main()
