@@ -46,6 +46,7 @@ case ${cmd} in
 	;;
 esac
 
+PS3="Select the Streamer: "
 select streamer in "${twitchset[@]}"
 do 
 	case $streamer in
