@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+cmd=$(basename $0)
+
 if [ $# -gt 0 ]
 then
 	logfile=${1}
@@ -16,7 +18,12 @@ fi
 
 if [ -f ${logfile} ]
 then
-	grep 2019 ${logfile}
+	if [ ${cmd} = "showtweets" ]
+	then
+		grep "^20" ${logfile} # this stops working in 2100. plan accordingly.
+	else
+		cat ${logfile}
+	fi
 else
 	echo "${logfile} not found"
 fi

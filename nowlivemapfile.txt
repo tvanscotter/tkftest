@@ -12,7 +12,7 @@ cigneutron:@cigneutron::N
 climategamers:@climatefortnite::
 coachbotzer:@coachbotzer::
 cosmoquestx:@cosmoquestx:@CosmoQuestX:
-csharpfritz:@csharpfritz:@jeffrey.t.fritz:
+csharpfritz:@csharpfritz::
 czech_meowt:@LCzech_Meowt:@LCzech.Meowt:
 damianexplores:@DamianExplores::
 danatur:@Danatur_::

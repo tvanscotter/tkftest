@@ -1,7 +1,7 @@
 ####!/usr/bin/env bash
 
 cmd=$(basename $0)
-
+PS3="Select the Streamer: "
 if [ -z ${NOWLIVESET} ]
 then
     echo "Environment variables not set. Run ' . nowliveenv.sh' to set them"
@@ -15,6 +15,7 @@ mapfile=${NOWLIVEMAPFILE}
 #pyscript="FBstreamer_discord.py"
 
 txt=$(echo "$1" | tr "'" "^")
+txt=$(echo ${txt} | tr -d '\n')
 shift 1
 
 # txt=$(echo "$txt" | tr "!" "=")
@@ -67,30 +68,54 @@ do
 	esac
 done
 
-echo -n "Last greeting used:"
-cat logs/lastgreeting
-echo "Current list of greetings:"
-num=0
-while read line
-do
-	((num=num+1))
-	echo "${num}: ${line}"
-	greetinglist=${greetinglist}${num}" "
-done < greetfile
+# echo -n "Last greeting used:"
+# cat logs/lastgreeting
 
-echo "select the number of the greeting you want to use for this now-live:"
+if [ ${AUTOGREETING} ]
+then
+	lastgreet=$(cat logs/lastgreeting)
+	numgreets=$(wc -l greetfile)
+	numgreets=$(cat greetfile | wc -l)
 
-greetings=(${greetinglist})
-select greeting in "${greetings[@]}"
-do
-	case greeting in
-		*)
-		break
+	case ${AUTOGREETING} in
+		random)
+		greeting=$((1 + RANDOM % ${numgreets}))
 		;;
+		*)
+		if [ ${lastgreet} -eq ${numgreets} ]
+		then
+			greeting=1
+		else
+			((greeting=lastgreet+1))
+		fi
 	esac
-done
 
-echo ${greeting} > logs/lastgreeting
+	#echo "last: ${lastgreet} num: ${numgreets} greeting: ${greeting}"
+	echo ${greeting} > logs/lastgreeting
+else
+	echo "Current list of greetings:"
+	num=0
+	while read line
+	do
+		((num=num+1))
+		echo "${num}: ${line}"
+		greetinglist=${greetinglist}${num}" "
+	done < greetfile
+
+	echo "select the number of the greeting you want to use for this now-live:"
+
+	greetings=(${greetinglist})
+	select greeting in "${greetings[@]}"
+	do
+		case greeting in
+			*)
+			break
+			;;
+		esac
+	done
+
+	echo ${greeting} > logs/lastgreeting
+fi
 
 #if [ $cmd = "tweetText.sh" ]
 #then
