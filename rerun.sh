@@ -29,7 +29,7 @@ case $cmd in
 		else
 			((greeting=lastgreet+1))
 		fi
-	    echo "last: ${lastgreet} num: ${numgreets} greeting: ${greeting}"
+	    #echo "last: ${lastgreet} num: ${numgreets} greeting: ${greeting}"
         ${prog} -t ${streamer} -s "${txt}" -r ${defaults} -g ${greeting}
         ;;
     "missed.sh")
