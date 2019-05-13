@@ -309,7 +309,7 @@ class facebookMsg():
 			text = "FACEBOOK: copy/pasta this for FB post\n\n"
 		
 		text += self.greeting + handle + self.livererun + twitchurl + self.streamer + " ! " + self.endline1 + "\n"
-		text += self.streamertext 
+		text += '"' + self.streamertext + '"' 
 		if '@' in self.twitter:
 			text += "\nTwitter: " + twitterurl + self.twitter[2:]
 		text += "\n"
