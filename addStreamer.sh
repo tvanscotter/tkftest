@@ -48,13 +48,6 @@ then
 	cp ${FILE} ${FILE}$$
 	cp ${FILE} ${FILE}_SAVE
 
-	printf "${twitch}:${twitter}:${facebook}" >> ${FILE}$$
-
-	if [ ${#option} -gt 0 ]
-	then
-		printf ":${option}\n" >> ${FILE}$$
-	else
-		printf "\n" >> ${FILE}$$
-	fi
+	printf "${twitch}:${twitter}:${facebook}:${option}\n" >> ${FILE}$$
 	sort ${FILE}$$ > ${FILE}
 fi
