@@ -176,7 +176,7 @@ class discordMsg():
 		else:
 			status = live
 		if self.showheaders:
-			text = "DISCORD: copy/pasta this for discord post\n"
+			text = "\nDISCORD: copy/pasta this for discord post\n"
 		
 		text += "\n" + self.streamer + status + "https://www.twitch.tv/" + self.streamer + " ! Go check it out!\n"
 		return text
